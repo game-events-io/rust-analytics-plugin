@@ -44,7 +44,7 @@ impl WhalyticsEventBuilder {
 }
 
 /// Session structure that holds common properties for events
-#[derive(Clone, Debug, Builder)]
+#[derive(Clone, Debug, Builder, Default)]
 #[builder(setter(into))]
 pub struct WhalyticsSession {
     /// Unique user identifier
