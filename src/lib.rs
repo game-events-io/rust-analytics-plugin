@@ -52,6 +52,10 @@ pub struct WhalyticsSession {
     
     /// Session identifier
     session_id: String,
+
+    /// Events
+    #[builder(default)]
+    events: Vec<WhalyticsEvent>,
     
     /// User properties that will be added to all events in this session
     #[builder(default)]
@@ -97,6 +101,16 @@ impl WhalyticsSession {
     /// Get all user properties for this session
     pub fn user_properties(&self) -> &HashMap<String, serde_json::Value> {
         &self.user_properties
+    }
+
+    /// Events
+    pub fn push_event(&mut self, event: WhalyticsEvent) {
+        self.events.push(event);
+    }
+
+    /// Take all events from this session
+    pub fn take_events(&mut self) -> Vec<WhalyticsEvent> {
+        self.events.drain(..).collect()
     }
 }
 
