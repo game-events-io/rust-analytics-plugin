@@ -43,6 +43,63 @@ impl WhalyticsEventBuilder {
     }
 }
 
+/// Session structure that holds common properties for events
+#[derive(Clone, Debug, Builder)]
+#[builder(setter(into))]
+pub struct WhalyticsSession {
+    /// Unique user identifier
+    user_id: String,
+    
+    /// Session identifier
+    session_id: String,
+    
+    /// User properties that will be added to all events in this session
+    #[builder(default)]
+    user_properties: HashMap<String, serde_json::Value>,
+}
+
+impl WhalyticsSession {
+    /// Create a new session with user_id and session_id
+    pub fn new(user_id: impl Into<String>, session_id: impl Into<String>) -> Self {
+        WhalyticsSessionBuilder::default()
+            .user_id(user_id)
+            .session_id(session_id)
+            .build()
+            .expect("Failed to create WhalyticsSession")
+    }
+    
+    /// Create an event builder with session properties pre-filled
+    pub fn event(&self, event_name: impl Into<String>) -> WhalyticsEventBuilder {
+        let mut builder = WhalyticsEventBuilder::default();
+        builder
+            .event(event_name)
+            .user_id(self.user_id.clone())
+            .session_id(self.session_id.clone())
+            .user_properties(self.user_properties.clone());
+        builder
+    }
+    
+    /// Add or update a user property for this session
+    pub fn set_user_property(&mut self, key: impl Into<String>, value: serde_json::Value) {
+        self.user_properties.insert(key.into(), value);
+    }
+    
+    /// Get the user_id for this session
+    pub fn user_id(&self) -> &str {
+        &self.user_id
+    }
+    
+    /// Get the session_id for this session
+    pub fn session_id(&self) -> &str {
+        &self.session_id
+    }
+    
+    /// Get all user properties for this session
+    pub fn user_properties(&self) -> &HashMap<String, serde_json::Value> {
+        &self.user_properties
+    }
+}
+
 /// Whalytics SDK client
 #[derive(Debug, Clone, Builder)]
 #[builder(setter(into))]
@@ -164,4 +221,53 @@ mod tests {
         client.log_event(event);
         assert_eq!(client.pending_events_count(), 1);
     }
+    
+    #[test]
+    fn test_session_creation() {
+        let session = WhalyticsSession::new("user123", "session456");
+        assert_eq!(session.user_id(), "user123");
+        assert_eq!(session.session_id(), "session456");
+        assert!(session.user_properties().is_empty());
+    }
+    
+    #[test]
+    fn test_session_with_user_properties() {
+        let mut user_props = HashMap::new();
+        user_props.insert("platform".to_string(), serde_json::json!("rust"));
+        user_props.insert("version".to_string(), serde_json::json!("1.0"));
+        
+        let session = WhalyticsSessionBuilder::default()
+            .user_id("user123")
+            .session_id("session456")
+            .user_properties(user_props)
+            .build()
+            .unwrap();
+        
+        assert_eq!(session.user_properties().len(), 2);
+    }
+    
+    #[test]
+    fn test_session_event_creation() {
+        let session = WhalyticsSession::new("user123", "session456");
+        let event = session.event("test_event").build().unwrap();
+        
+        assert_eq!(event.event, "test_event");
+        assert_eq!(event.user_id, "user123");
+        assert_eq!(event.session_id, "session456");
+    }
+    
+    #[test]
+    fn test_session_set_user_property() {
+        let mut session = WhalyticsSession::new("user123", "session456");
+        session.set_user_property("platform", serde_json::json!("rust"));
+        session.set_user_property("level", serde_json::json!(10));
+        
+        assert_eq!(session.user_properties().len(), 2);
+        
+        // Events created after setting properties should include them
+        let event = session.event("test_event").build().unwrap();
+        assert_eq!(event.user_properties.len(), 2);
+        assert_eq!(event.user_properties.get("platform").unwrap(), "rust");
+    }
 }
+
