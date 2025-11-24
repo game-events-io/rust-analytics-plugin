@@ -114,8 +114,16 @@ impl WhalyticsSession {
     }
 
     /// Take all events from this session
-    pub fn take_events(&mut self) -> Vec<WhalyticsEvent> {
-        self.events.drain(..).collect()
+    pub fn take_events(&mut self, max_count: usize) -> Vec<WhalyticsEvent> {
+        let mut events = Vec::with_capacity(max_count);
+        for _ in 0..max_count {
+            if let Some(event) = self.events.pop() {
+                events.push(event);
+            } else {
+                break;
+            }
+        }
+        events
     }
 }
 
