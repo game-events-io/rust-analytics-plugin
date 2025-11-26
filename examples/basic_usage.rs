@@ -1,16 +1,16 @@
 use serde_json::json;
 use std::collections::HashMap;
-use game_events_sdk::{WhalyticsClient, WhalyticsEventBuilder, WhalyticsSession};
+use game_events_sdk::{GameEventsIOClient, GameEventsIOEventBuilder, GameEventsIOSession};
 
 fn main() {
     // Initialize the client
-    let mut client = WhalyticsClient::new("YOUR_API_KEY_HERE");
+    let mut client = GameEventsIOClient::new("YOUR_API_KEY_HERE");
 
     println!("game-events.io Rust SDK Example\n");
 
     // Example 1: Simple event (old way)
     println!("1. Logging a simple event (without session)...");
-    let event1 = WhalyticsEventBuilder::default()
+    let event1 = GameEventsIOEventBuilder::default()
         .event("app_start")
         .user_id("rust_user_123")
         .session_id("rust_session_456")
@@ -18,10 +18,10 @@ fn main() {
         .unwrap();
     client.log_event(event1);
 
-    // Example 2: Using WhalyticsSession (recommended way)
+    // Example 2: Using GameEventsIOSession (recommended way)
     println!("2. Creating a session and logging events...");
     // New: Defaults to random UUIDs if not specified, but here we specify them
-    let mut session = WhalyticsSession::new("rust_user_123", "rust_session_456");
+    let mut session = GameEventsIOSession::new("rust_user_123", "rust_session_456");
 
     // Set user properties for the session
     session.set_user_property("platform", json!("rust"));

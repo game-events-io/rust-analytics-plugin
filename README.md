@@ -22,15 +22,15 @@ game-events-sdk = { git = "https://github.com/game-events-io/rust-sdk.git" }
 ## Quick Start
 
 ```rust
-use game_events_sdk::{WhalyticsClient, WhalyticsSession};
+use game_events_sdk::{GameEventsIOClient, GameEventsIOSession};
 use std::collections::HashMap;
 
 fn main() {
     // Initialize the client with your API key
-    let mut client = WhalyticsClient::new("YOUR_API_KEY");
+    let mut client = GameEventsIOClient::new("YOUR_API_KEY");
     
     // Create a session (automatically generates UUIDs for user_id and session_id)
-    let mut session = WhalyticsSession::default();
+    let mut session = GameEventsIOSession::default();
     
     // Log an event
     session.push_event("level_completed", HashMap::new());
@@ -52,15 +52,15 @@ fn main() {
 
 ### Using Sessions (Recommended)
 
-`WhalyticsSession` helps manage user_id, session_id, and user properties automatically.
+`GameEventsIOSession` helps manage user_id, session_id, and user properties automatically.
 
 ```rust
-use game_events_sdk::WhalyticsSession;
+use game_events_sdk::GameEventsIOSession;
 use serde_json::json;
 use std::collections::HashMap;
 
 // Create session with specific IDs
-let mut session = WhalyticsSession::new("user_123", "session_456");
+let mut session = GameEventsIOSession::new("user_123", "session_456");
 
 // Set user properties (added to all events)
 session.set_user_property("platform", json!("rust"));
@@ -82,7 +82,7 @@ let events = session.take_events(10);
 You can still create events manually if you prefer:
 
 ```rust
-let event = WhalyticsEventBuilder::default()
+let event = GameEventsIOEventBuilder::default()
     .event("button_click")
     .user_id("user_123")
     .session_id("session_456")
@@ -102,7 +102,7 @@ event_props.insert("level_id".to_string(), json!(5));
 event_props.insert("score".to_string(), json!(1500));
 event_props.insert("difficulty".to_string(), json!("hard"));
 
-let event = WhalyticsEventBuilder::default()
+let event = GameEventsIOEventBuilder::default()
     .event("level_completed")
     .user_id("user_123")
     .session_id("session_456")
@@ -128,9 +128,9 @@ while client.pending_events_count() > 0 {
 ### Custom Backend URL
 
 ```rust
-use game_events_sdk::WhalyticsClientBuilder;
+use game_events_sdk::GameEventsIOClientBuilder;
 
-let client = WhalyticsClientBuilder::default()
+let client = GameEventsIOClientBuilder::default()
     .api_key("YOUR_API_KEY")
     .backend_url("https://api.game-events.io/v1/events") // Updated to new domain
     .build()
@@ -139,17 +139,17 @@ let client = WhalyticsClientBuilder::default()
 
 ## API Reference
 
-### `WhalyticsClient`
+### `GameEventsIOClient`
 
 #### Methods
 
 - `new(api_key: impl Into<String>) -> Self` - Create a new client
-- `log_event(&mut self, event: WhalyticsEvent)` - Add an event to the buffer
+- `log_event(&mut self, event: GameEventsIOEvent)` - Add an event to the buffer
 - `flush(&mut self) -> Result<String, reqwest::Error>` - Send all buffered events
 - `flush_batch(&mut self, batch_size: usize) -> Result<String, reqwest::Error>` - Send events in batches
 - `pending_events_count(&self) -> usize` - Get the number of buffered events
 
-### `WhalyticsEvent`
+### `GameEventsIOEvent`
 
 #### Fields
 

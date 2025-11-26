@@ -11,7 +11,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 #[derive(Serialize, Deserialize, Clone, Debug, Builder, Default)]
 #[builder(setter(into))]
 #[builder(default)]
-pub struct WhalyticsEvent {
+pub struct GameEventsIOEvent {
     /// Event name (e.g., "level_completed", "purchase")
     pub event: String,
 
@@ -34,7 +34,7 @@ pub struct WhalyticsEvent {
     pub user_properties: HashMap<String, serde_json::Value>,
 }
 
-impl WhalyticsEventBuilder {
+impl GameEventsIOEventBuilder {
     fn default_time(&self) -> u64 {
         SystemTime::now()
             .duration_since(UNIX_EPOCH)
@@ -48,7 +48,7 @@ use uuid::Uuid;
 /// Session structure that holds common properties for events
 #[derive(Clone, Debug, Builder)]
 #[builder(setter(into))]
-pub struct WhalyticsSession {
+pub struct GameEventsIOSession {
     /// Unique user identifier
     #[builder(default = "Uuid::new_v4().to_string()")]
     user_id: String,
@@ -59,29 +59,29 @@ pub struct WhalyticsSession {
 
     /// Events
     #[builder(default)]
-    events: Vec<WhalyticsEvent>,
+    events: Vec<GameEventsIOEvent>,
 
     /// User properties that will be added to all events in this session
     #[builder(default)]
     user_properties: HashMap<String, serde_json::Value>,
 }
 
-impl Default for WhalyticsSession {
+impl Default for GameEventsIOSession {
     fn default() -> Self {
-        WhalyticsSessionBuilder::default()
+        GameEventsIOSessionBuilder::default()
             .build()
-            .expect("Failed to create default WhalyticsSession")
+            .expect("Failed to create default GameEventsIOSession")
     }
 }
 
-impl WhalyticsSession {
+impl GameEventsIOSession {
     /// Create a new session with user_id and session_id
     pub fn new(user_id: impl Into<String>, session_id: impl Into<String>) -> Self {
-        WhalyticsSessionBuilder::default()
+        GameEventsIOSessionBuilder::default()
             .user_id(user_id)
             .session_id(session_id)
             .build()
-            .expect("Failed to create WhalyticsSession")
+            .expect("Failed to create GameEventsIOSession")
     }
 
     /// Add an event to the session
@@ -106,7 +106,7 @@ impl WhalyticsSession {
             };
 
         // Create the event
-        let event = WhalyticsEventBuilder::default()
+        let event = GameEventsIOEventBuilder::default()
             .event(event)
             .user_id(user_id)
             .session_id(session_id)
@@ -144,7 +144,7 @@ impl WhalyticsSession {
     }
 
     /// Take all events from this session
-    pub fn take_events(&mut self, max_count: usize) -> Vec<WhalyticsEvent> {
+    pub fn take_events(&mut self, max_count: usize) -> Vec<GameEventsIOEvent> {
         let count = std::cmp::min(self.events.len(), max_count);
         self.events.drain(0..count).collect()
     }
@@ -153,7 +153,7 @@ impl WhalyticsSession {
 /// game-events.io SDK client
 #[derive(Debug, Clone, Builder)]
 #[builder(setter(into))]
-pub struct WhalyticsClient {
+pub struct GameEventsIOClient {
     /// API key for authentication
     api_key: String,
 
@@ -171,20 +171,20 @@ pub struct WhalyticsClient {
     /// Buffered events waiting to be sent
     #[builder(setter(skip))]
     #[builder(default)]
-    events: Vec<WhalyticsEvent>,
+    events: Vec<GameEventsIOEvent>,
 }
 
-impl WhalyticsClient {
-    /// Create a new Whalytics client
+impl GameEventsIOClient {
+    /// Create a new GameEventsIO client
     pub fn new(api_key: impl Into<String>) -> Self {
-        WhalyticsClientBuilder::default()
+        GameEventsIOClientBuilder::default()
             .api_key(api_key)
             .build()
-            .expect("Failed to create WhalyticsClient")
+            .expect("Failed to create GameEventsIOClient")
     }
 
     /// Log an event (adds to buffer)
-    pub fn log_event(&mut self, event: WhalyticsEvent) {
+    pub fn log_event(&mut self, event: GameEventsIOEvent) {
         self.events.push(event);
     }
 
@@ -194,7 +194,7 @@ impl WhalyticsClient {
             return Ok("No events to send".to_string());
         }
 
-        let events_to_send: Vec<WhalyticsEvent> = self.events.drain(..).collect();
+        let events_to_send: Vec<GameEventsIOEvent> = self.events.drain(..).collect();
 
         let response = self
             .client
@@ -213,7 +213,7 @@ impl WhalyticsClient {
             return Ok("No events to send".to_string());
         }
 
-        let events_to_send: Vec<WhalyticsEvent> = if self.events.len() > batch_size {
+        let events_to_send: Vec<GameEventsIOEvent> = if self.events.len() > batch_size {
             self.events.drain(..batch_size).collect()
         } else {
             self.events.drain(..).collect()
@@ -242,7 +242,7 @@ mod tests {
 
     #[test]
     fn test_event_creation() {
-        let event = WhalyticsEventBuilder::default()
+        let event = GameEventsIOEventBuilder::default()
             .event("test_event")
             .user_id("user123")
             .session_id("session456")
@@ -257,15 +257,15 @@ mod tests {
 
     #[test]
     fn test_client_creation() {
-        let client = WhalyticsClient::new("test_api_key");
+        let client = GameEventsIOClient::new("test_api_key");
         assert_eq!(client.pending_events_count(), 0);
     }
 
     #[test]
     fn test_event_buffering() {
-        let mut client = WhalyticsClient::new("test_api_key");
+        let mut client = GameEventsIOClient::new("test_api_key");
 
-        let event = WhalyticsEventBuilder::default()
+        let event = GameEventsIOEventBuilder::default()
             .event("test_event")
             .user_id("user123")
             .session_id("session456")
@@ -278,7 +278,7 @@ mod tests {
 
     #[test]
     fn test_session_creation() {
-        let session = WhalyticsSession::new("user123", "session456");
+        let session = GameEventsIOSession::new("user123", "session456");
         assert_eq!(session.user_id(), "user123");
         assert_eq!(session.session_id(), "session456");
         assert!(session.user_properties().is_empty());
@@ -290,7 +290,7 @@ mod tests {
         user_props.insert("platform".to_string(), serde_json::json!("rust"));
         user_props.insert("version".to_string(), serde_json::json!("1.0"));
 
-        let session = WhalyticsSessionBuilder::default()
+        let session = GameEventsIOSessionBuilder::default()
             .user_id("user123")
             .session_id("session456")
             .user_properties(user_props)
@@ -302,7 +302,7 @@ mod tests {
 
     #[test]
     fn test_session_event_creation() {
-        let mut session = WhalyticsSession::new("user123", "session456");
+        let mut session = GameEventsIOSession::new("user123", "session456");
         session.push_event("test_event", HashMap::new());
 
         let events = session.take_events(1);
@@ -316,7 +316,7 @@ mod tests {
 
     #[test]
     fn test_session_set_user_property() {
-        let mut session = WhalyticsSession::new("user123", "session456");
+        let mut session = GameEventsIOSession::new("user123", "session456");
         session.set_user_property("platform", serde_json::json!("rust"));
         session.set_user_property("level", serde_json::json!(10));
 
@@ -334,7 +334,7 @@ mod tests {
 
     #[test]
     fn test_session_defaults() {
-        let session = WhalyticsSession::default();
+        let session = GameEventsIOSession::default();
         assert!(!session.user_id().is_empty());
         assert!(!session.session_id().is_empty());
         // Simple check to see if it looks like a UUID (36 chars)
@@ -344,7 +344,7 @@ mod tests {
 
     #[test]
     fn test_session_id_precedence() {
-        let mut session = WhalyticsSession::new("default_user", "default_session");
+        let mut session = GameEventsIOSession::new("default_user", "default_session");
 
         let mut props = HashMap::new();
         props.insert("user_id".to_string(), serde_json::json!("custom_user"));
