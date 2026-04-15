@@ -184,7 +184,7 @@ pub struct GameEventsIOClient {
     /// HTTP client for making requests
     #[builder(setter(skip))]
     #[builder(
-        default = "reqwest::blocking::Client::builder().danger_accept_invalid_certs(true).build().unwrap()"
+        default = "reqwest::blocking::Client::builder().timeout(std::time::Duration::from_secs(15)).build().expect(\"failed to build reqwest client\")"
     )]
     client: reqwest::blocking::Client,
 
